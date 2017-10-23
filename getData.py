@@ -30,7 +30,7 @@ def readData(fn, vth, amp):
 				# print(l.split()[2])
 				# print(idtotal)
 				# idtotal = idtotal * vds * amp if idtotal > vth else 0 
-				idtotal = exp(idtotal * vds * amp - vth * vds * amp) - 1
+				# idtotal = exp(idtotal * vds * amp - vth * vds * amp) - 1
 				if valid:
 					valid = False
 					idlst.append(idtotal)
