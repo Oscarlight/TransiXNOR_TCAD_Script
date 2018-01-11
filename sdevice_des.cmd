@@ -1,37 +1,35 @@
+Device TransiXNOR {
+
 Electrode{
-   { Name="source"      Voltage=  0.0  }
-   { Name="drain"       Voltage=  0.0  }
-   { Name="topGate"     Voltage=  0.0  Schottky Barrier = 0.1 }
-   { Name="bottomGate"  Voltage=  0.2  Schottky Barrier=  0.1 }
+   { Name="source"        Voltage=  0.0  }
+   { Name="drain"         Voltage=  0.0  }
+   { Name="topGate"       Voltage=  0.2  Schottky Barrier = 0.02 } ### prevent skip Vtg = 0
+   { Name="bottomGate"    Voltage=  0.2  Schottky Barrier = 0.02 }
+#   { Name="topSource"     Voltage=  -0.35  }
+#   { Name="bottomSource"  Voltage=  -0.35  }
+#   { Name="topDrain"      Voltage=  0.75  }
+#   { Name="bottomDrain"   Voltage=  0.75  }
 }
 
 File{
    Grid= "@tdr@"    
    Current= "@plot@"       
-   Output= "@log@"
    Plot= "@tdrdat@"        
-   Parameter= "@parameter@"        
+   Parameter= "@parameter@"
 }
 
-
 Physics {
-   # for tunneling 
-   # eBarrierTunneling "NLM" hBarrierTunneling "NLM"
-   Recombination( # without B2B, current = 5e-15
-     Band2Band (
-       Model = E1
-       * Model = Hurkx
-       DensityCorrection = Local
+   Recombination(
+     Band2Band(
+       Model = NonLocalPath
      )
    )                           
    EffectiveIntrinsicDensity( NoBandGapNarrowing )
 }
 
-
 Physics( Material="InGaAs"){
    MoleFraction( xFraction= 0.2 Grading= 0)
 }
-
 
 Plot{
    eDensity hDensity
@@ -41,18 +39,16 @@ Plot{
    eQuasiFermi hQuasiFermi
    eBarrierTunneling
    hBarrierTunneling
-
    ElectricField/Vector Potential SpaceCharge
-
    Doping DonorConcentration AcceptorConcentration
-
    eGradQuasiFermi/Vector hGradQuasiFermi/Vector
    eEparallel hEparalllel
-
    BandGap 
    Affinity
    ConductionBand ValenceBand
    xMoleFraction
+}
+
 }
 
 Math{
@@ -68,27 +64,48 @@ Math{
    RelTermMinDensityZero= 1e7     
 }
 
+File {
+   Output= "@log@"
+   ACExtract= "@acplot@" 
+}
+
+System {
+   TransiXNOR trans ("drain"=d "source"=s "topGate"=g "bottomGate"=b)
+   Vsource_pset vd (d 0) {dc=0}
+   Vsource_pset vs (s 0) {dc=0}
+   Vsource_pset vg (g 0) {dc=0.2}
+   Vsource_pset vb (b 0) {dc=0.2}
+}
+
 Solve{
 *- Initial Solution:
    Coupled( Iterations= 100 ){ Poisson }
    Coupled{ Poisson Electron Hole }
-   Coupled{ Poisson Electron Hole }
 
+#----------------------------------------------------------------------
+#- Plots
 #----------------------------------------------------------------------#
-#- IdVg 
-#----------------------------------------------------------------------#
 
-   Quasistationary(
-      InitialStep= 5e-2 Increment= 1.25
-      Minstep= 1e-5 MaxStep= 0.2 
-      Goal{ Name="drain" Voltage = 0.2 }
-   ){ Coupled{ Poisson Electron Hole } }
+Quasistationary( InitialStep= 5e-2 Increment= 1.25 
+ Minstep= 1e-5 MaxStep= 0.015 
+ Goal{ Parameter=vg.dc Voltage = 0.20 }) 
+ { Coupled{ Poisson Electron Hole } }
 
-   NewCurrentFile="IdVg_"
+Quasistationary( InitialStep= 5e-2 Increment= 1.25 
+ Minstep= 1e-5 MaxStep= 0.015 
+ Goal{ Parameter=vb.dc Voltage = 0.20 }) 
+ { Coupled{ Poisson Electron Hole } }
 
-   Quasistationary(
-      InitialStep= 5e-2 Increment= 1.25
-      Minstep= 1e-5 MaxStep= 0.05 
-      Goal{ Name="topGate"  Voltage= 0.4 }
-   ){ Coupled{ Poisson Electron Hole } }
+NewCurrentFile="IV_Vtg_0.20_Vbg_0.20_"
+
+Quasistationary( InitialStep= 5e-2 Increment= 1.25 
+ Minstep= 1e-5 MaxStep= 0.015
+ Goal{ Parameter=vd.dc  Voltage= 0.40 }) 
+ { ACCoupled ( 
+ StartFrequency=1e7 EndFrequency=1e7 
+ NumberOfPoints=1 Decade 
+ Node (d s g b) Exclude (vd vs vg vb) 
+ ) 
+ { Poisson Electron Hole } }
+
 }
