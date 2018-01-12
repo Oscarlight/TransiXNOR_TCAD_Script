@@ -1,2 +1,2 @@
 # TransiXOR-TCAD
-TCAD files for TransiXOR simulation
+TCAD files for TransiXNOR simulation
