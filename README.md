@@ -1,2 +1,2 @@
-# TransiXNOR-TCAD
-TCAD files for TransiXNOR simulation
+# Scripts for TransiXNOR TCAD Simulation
+
